@@ -1,0 +1,12 @@
+object EvenOddChecker {
+  def main(args: Array[String]): Unit = {
+    //val number: Int = 15 // Number you want to check
+      val number: Int = 20 // Number you want to check
+
+    if (number % 2 == 0) {
+      println(s"The number $number is even.")
+    } else {
+      println(s"The number $number is odd.")
+    }
+  }
+}

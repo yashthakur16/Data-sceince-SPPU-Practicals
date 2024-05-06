@@ -1,0 +1,162 @@
+git clone https://github.com/apache/impala.git
+fatal: destination path 'impala' already exists and is not an empty directory.
+
+ubuntu@ubuntu-OptiPlex-3090:~$ git clone https://github.com/apache/impala.git impala
+fatal: destination path 'impala' already exists and is not an empty directory.
+
+
+cd impala
+ubuntu@ubuntu-OptiPlex-3090:~/impala$ docker network create -d bridge quickstart-network
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Post "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/networks/create": dial unix /var/run/docker.sock: connect: permission denied
+
+buntu@ubuntu-OptiPlex-3090:~/impala$ export QUICKSTART_IP=$(docker network inspect quickstart-network -f '{{(index .IPAM.Config 0).Gateway}}')
+Got permission denied while trying to connect to the Docker daemon socket at unix:///var/run/docker.sock: Get "http://%2Fvar%2Frun%2Fdocker.sock/v1.24/networks/quickstart-network": dial unix /var/run/docker.sock: connect: permission denied
+
+
+ubuntu@ubuntu-OptiPlex-3090:~/impala$ export QUICKSTART_LISTEN_ADDR=$QUICKSTART_IP
+ubuntu@ubuntu-OptiPlex-3090:~/impala$   export IMPALA_QUICKSTART_IMAGE_PREFIX="apache/impala:81d5377c2-"
+
+
+export QUICKSTART_LISTEN_ADDR=0.0.0.0
+ubuntu@ubuntu-OptiPlex-3090:~/impala$   export IMPALA_QUICKSTART_IMAGE_PREFIX="apache/impala:81d5377c2-"
+ubuntu@ubuntu-OptiPlex-3090:~/impala$ sudo chmod 666 /var/run/docker.sock
+[sudo] password for ubuntu: 
+ubuntu@ubuntu-OptiPlex-3090:~/impala$   docker-compose -f docker/quickstart.yml up -d
+/snap/docker/2746/lib/python3.6/site-packages/paramiko/transport.py:32: CryptographyDeprecationWarning: Python 3.6 is no longer supported by the Python core team. Therefore, support for it is deprecated in cryptography. The next release of cryptography (40.0) will be the last to support Python 3.6.
+  from cryptography.hazmat.backends import default_backend
+Recreating quickstart-hive-metastore ... done
+Recreating docker_statestored_1      ... done
+Recreating docker_catalogd_1         ... done
+Recreating docker_impalad-1_1        ... done
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2. Run Impala Shell and create Database 
+
+-------------------------------------------
+
+
+ubuntu@ubuntu-OptiPlex-3090:~/impala$   docker run --network=quickstart-network -it \
+>      ${IMPALA_QUICKSTART_IMAGE_PREFIX}impala_quickstart_client impala-shell
++ [[ 1 -eq 0 ]]
++ [[ impala-shell = \l\o\a\d\_\t\p\c\d\s ]]
++ [[ impala-shell = \i\m\p\a\l\a\-\s\h\e\l\l ]]
++ shift
++ exec impala-shell --protocol=hs2 --history_file=/tmp/impalahistory -i docker_impalad-1_1
+Starting Impala Shell without Kerberos authentication
+Error connecting: TTransportException, Could not connect to docker_impalad-1_1:21050
+***********************************************************************************
+Welcome to the Impala shell.
+(Impala Shell v3.4.0-RELEASE (9f1c31c) built on Fri Apr 24 14:10:19 PDT 2020)
+
+Want to know what version of Impala you're connected to? Run the VERSION command to
+find out!
+***********************************************************************************
+[Not connected] > show databases;
+Connection lost, reconnecting...
+Opened TCP connection to docker_impalad-1_1:21050
+
+----------------------------------------------------------------------------------------------------------------
+3. Show Databases
+---------------------------
+
+Query: show databases
++------------------+----------------------------------------------+
+| name             | comment                                      |
++------------------+----------------------------------------------+
+| _impala_builtins | System database for Impala builtin functions |
+| db1              |                                              |
+| default          | Default Hive database                        |
++------------------+----------------------------------------------+
+Fetched 3 row(s) in 0.02s
+
+
+----------------------------------------------------------------------------------------------------------------
+4. Create Database
+------------------------------------------
+
+[Not connected] > create database db;
+Query: create database db
++----------------------------+
+| summary                    |
++----------------------------+
+| Database has been created. |
++----------------------------+
+Fetched 1 row(s) in 0.15s
+
+
+-----------------------------------------------------------------------------------------------------------------
+5. Use Database
+--------------------------------------
+
+[Not connected] > use db;
+Query: use db
+[docker_impalad-1_1:21050] db> create table student(rollNo int, name string, marks int, primary key(rollNo))
+
+
+                             > ;
+                             
++-------------------------+
+| summary                 |
++-------------------------+
+| Table has been created. |
++-------------------------+
+Fetched 1 row(s) in 0.32s
+
+
+-------------------------------------------------------------------------------------------------------------------
+6. Show and Describe Database
+-------------------------------------------
+
+
+[docker_impalad-1_1:21050] db> show tables;
+Query: show tables
++---------+
+| name    |
++---------+
+| student |
++---------+
+Fetched 1 row(s) in 0.01s
+
+[docker_impalad-1_1:21050] db> describe student;
+Query: describe student
++--------+--------+---------+
+| name   | type   | comment |
++--------+--------+---------+
+| rollno | int    |         |
+| name   | string |         |
+| marks  | int    |         |
++--------+--------+---------+
+Fetched 3 row(s) in 0.36s
+
+
+------------------------------------------------------------------------------------------------------------------------
+7. Insert Values into table
+--------------------------------------------
+
+
+docker_impalad-1_1:21050] db> insert into student values(1, "Ram", 76), (2, "Rama", 88), (3, "Raghaw", 87), (4, "Ramesh", 98);
+Query: insert into student values(1, "Ram", 76), (2, "Rama", 88), (3, "Raghaw", 87), (4, "Ramesh", 98)
+Query submitted at: 2023-05-17 04:16:29 (Coordinator: http://172.18.0.5:25000)
+Query progress can be monitored at: http://172.18.0.5:25000/query_plan?query_id=fc43a742ef809675:16406b5b00000000
+Modified 4 row(s) in 0.61s
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+8. Show inserted values of student table
+------------------------------------------------
+
+
+[docker_impalad-1_1:21050] db> select * from student;
+Query: select * from student
+Query submitted at: 2023-05-17 04:16:39 (Coordinator: http://172.18.0.5:25000)
+Query progress can be monitored at: http://172.18.0.5:25000/query_plan?query_id=dd4cb49b398c1253:19258a1100000000
++--------+--------+-------+
+| rollno | name   | marks |
++--------+--------+-------+
+| 1      | Ram    | 76    |
+| 2      | Rama   | 88    |
+| 3      | Raghaw | 87    |
+| 4      | Ramesh | 98    |
++--------+--------+-------+
+Fetched 4 row(s) in 0.21s
